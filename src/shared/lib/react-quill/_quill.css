@@ -33,6 +33,7 @@
 .ql-editor a,
 .ql-rendered-content a {
   color: oklch(54.6% 0.245 262.881);
+  text-decoration: none !important;
 }
 
 .ql-editor a:hover,

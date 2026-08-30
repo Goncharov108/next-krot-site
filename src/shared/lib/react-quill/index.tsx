@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
 import dynamic from "next/dynamic";
@@ -10,6 +11,8 @@ import { cn } from "@/shared/lib/cn";
 import "./_quill.css";
 
 const DEFAULT_AVATAR_SRC = "/images/default-avatar.png";
+const DEFAULT_EXPERT_NAME = "Крот Михайлович";
+const DEFAULT_EXPERT_DESCRIPTION = "Наш виртуальный помощник";
 const EXPERT_QUOTE_SYNC_EVENT = "expert-quote-sync";
 
 interface ExpertQuoteValue {
@@ -268,6 +271,43 @@ const bindAvatarButton = (
     });
 };
 
+const prepareExpertQuotesForSave = (html: string): string => {
+    const parsedDocument = new DOMParser().parseFromString(html, "text/html");
+
+    parsedDocument
+        .querySelectorAll<HTMLElement>(".ql-expert-quote")
+        .forEach((quote) => {
+            const description = quote.querySelector<HTMLElement>(
+                ".ql-expert-quote__description",
+            );
+            const name = quote.querySelector<HTMLElement>(
+                ".ql-expert-quote__name",
+            );
+
+            const descriptionText = description?.textContent?.trim() ?? "";
+            const nameText = name?.textContent?.trim() ?? "";
+
+            const finalDescription =
+                descriptionText || DEFAULT_EXPERT_DESCRIPTION;
+            const finalName = nameText || DEFAULT_EXPERT_NAME;
+
+            quote.setAttribute("data-description", finalDescription);
+            quote.setAttribute("data-name", finalName);
+
+            if (description) {
+                description.textContent = finalDescription;
+                description.dataset.empty = "false";
+            }
+
+            if (name) {
+                name.textContent = finalName;
+                name.dataset.empty = "false";
+            }
+        });
+
+    return parsedDocument.body.innerHTML;
+};
+
 const hydrateExpertQuoteNode = (node: HTMLElement): void => {
     node.contentEditable = "false";
 
@@ -373,7 +413,6 @@ const ReactQuill = dynamic(
         const quillModule = await import("react-quill-new");
         const { Quill } = quillModule;
 
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const BlockEmbed = Quill.import("blots/block/embed") as any;
 
         class ExpertQuoteBlot extends BlockEmbed {
@@ -538,7 +577,10 @@ const QuillEditor = ({
     const emitEditorHtml = useCallback(
         (html: string) => {
             skipNextExternalValueSyncRef.current = true;
-            onChange(html);
+
+            const htmlForSave = prepareExpertQuotesForSave(html);
+
+            onChange(htmlForSave);
         },
         [onChange],
     );
@@ -626,6 +668,7 @@ const QuillEditor = ({
 
                     ["clean"],
                 ],
+
                 handlers: {
                     image: function (this: QuillHandlerContext) {
                         const input = document.createElement("input");
@@ -680,6 +723,61 @@ const QuillEditor = ({
                         this.quill.setSelection(insertIndex + 1);
                     },
                 },
+            },
+
+            clipboard: {
+                matchers: [
+                    [
+                        Node.ELEMENT_NODE,
+                        (_node: Node, delta: any) => {
+                            delta.ops = delta.ops.map((op: any) => {
+                                if (!op.attributes) {
+                                    return op;
+                                }
+
+                                const attributes = { ...op.attributes };
+
+                                delete attributes.color;
+                                delete attributes.background;
+
+                                return {
+                                    ...op,
+                                    attributes:
+                                        Object.keys(attributes).length > 0
+                                            ? attributes
+                                            : undefined,
+                                };
+                            });
+
+                            return delta;
+                        },
+                    ],
+
+                    [
+                        "U",
+                        (_node: HTMLElement, delta: any) => {
+                            delta.ops = delta.ops.map((op: any) => {
+                                if (!op.attributes?.link) {
+                                    return op;
+                                }
+
+                                const attributes = { ...op.attributes };
+
+                                delete attributes.underline;
+
+                                return {
+                                    ...op,
+                                    attributes:
+                                        Object.keys(attributes).length > 0
+                                            ? attributes
+                                            : undefined,
+                                };
+                            });
+
+                            return delta;
+                        },
+                    ],
+                ],
             },
         }),
         [],
