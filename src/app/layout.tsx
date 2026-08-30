@@ -22,7 +22,7 @@ export const generateMetadata = async (): Promise<Metadata> => {
             default: `Кроссхаб Российских Онлайн Технологий — КРОТ`,
             template: `%s `,
         },
-        description: `-`,
+        description: `Все о информационных технологиях в России | ИИ в настоящем и будущем`,
     };
 };
 
