@@ -27,7 +27,7 @@ export const ReadMore = ({
                 <Link
                     href={`/article/${article.slug}`}
                     className={cn(
-                        "inline-block rounded-full bg-gray-900 px-15 py-4 text-xs text-white transition hover:bg-gray-700 sm:px-20 dark:bg-white dark:text-black",
+                        "xs:px-15 xs:py-4 inline-block rounded-full bg-gray-900 px-5 py-3 text-xs text-white transition hover:bg-gray-700 sm:px-20 dark:bg-white dark:text-black",
                     )}
                 >
                     Читать далее

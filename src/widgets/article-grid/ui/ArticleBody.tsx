@@ -37,7 +37,7 @@ export const ArticleBody = ({ article, isExpanded }: ArticleBodyProps) => {
                     <div
                         className={cn(
                             "article__main-content space-y-2 overflow-hidden text-base leading-7 transition-[max-height] duration-500 ease-in-out md:text-lg md:leading-8",
-                            isExpanded ? "max-h-700" : "max-h-30 md:max-h-50",
+                            isExpanded ? "max-h-full" : "max-h-30 md:max-h-50",
                         )}
                     >
                         <ParsedHTML html={article.mainText} />

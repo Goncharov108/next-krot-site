@@ -103,6 +103,21 @@ const setEmptyState = (element: HTMLElement): void => {
     element.dataset.empty = text ? "false" : "true";
 };
 
+const normalizeExpertText = (value: string): string => {
+    return value.replace(/\u00A0/g, " ");
+};
+
+const normalizeTextNodes = (element: HTMLElement): void => {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+
+    let textNode = walker.nextNode();
+
+    while (textNode) {
+        textNode.nodeValue = normalizeExpertText(textNode.nodeValue ?? "");
+        textNode = walker.nextNode();
+    }
+};
+
 const stopQuillInnerEvents = (element: HTMLElement): void => {
     if (element.dataset.quillInnerEventsStopped === "true") {
         return;
@@ -159,9 +174,18 @@ const updateQuoteDataFromFields = (node: HTMLElement): void => {
 
     const name = node.querySelector<HTMLElement>(".ql-expert-quote__name");
 
-    node.setAttribute("data-text", bubble?.textContent ?? "");
-    node.setAttribute("data-description", description?.textContent ?? "");
-    node.setAttribute("data-name", name?.textContent ?? "");
+    node.setAttribute(
+        "data-text",
+        normalizeExpertText(bubble?.textContent ?? ""),
+    );
+    node.setAttribute(
+        "data-description",
+        normalizeExpertText(description?.textContent ?? ""),
+    );
+    node.setAttribute(
+        "data-name",
+        normalizeExpertText(name?.textContent ?? ""),
+    );
 
     if (bubble) {
         setEmptyState(bubble);
@@ -277,6 +301,9 @@ const prepareExpertQuotesForSave = (html: string): string => {
     parsedDocument
         .querySelectorAll<HTMLElement>(".ql-expert-quote")
         .forEach((quote) => {
+            const bubble = quote.querySelector<HTMLElement>(
+                ".ql-expert-quote__bubble",
+            );
             const description = quote.querySelector<HTMLElement>(
                 ".ql-expert-quote__description",
             );
@@ -284,13 +311,31 @@ const prepareExpertQuotesForSave = (html: string): string => {
                 ".ql-expert-quote__name",
             );
 
-            const descriptionText = description?.textContent?.trim() ?? "";
-            const nameText = name?.textContent?.trim() ?? "";
+            if (bubble) {
+                normalizeTextNodes(bubble);
+            }
+
+            if (description) {
+                normalizeTextNodes(description);
+            }
+
+            if (name) {
+                normalizeTextNodes(name);
+            }
+
+            const textValue = normalizeExpertText(bubble?.textContent ?? "");
+            const descriptionText = normalizeExpertText(
+                description?.textContent?.trim() ?? "",
+            );
+            const nameText = normalizeExpertText(
+                name?.textContent?.trim() ?? "",
+            );
 
             const finalDescription =
                 descriptionText || DEFAULT_EXPERT_DESCRIPTION;
             const finalName = nameText || DEFAULT_EXPERT_NAME;
 
+            quote.setAttribute("data-text", textValue);
             quote.setAttribute("data-description", finalDescription);
             quote.setAttribute("data-name", finalName);
 
@@ -329,6 +374,7 @@ const hydrateExpertQuoteNode = (node: HTMLElement): void => {
         node.append(bubble);
     }
 
+    normalizeTextNodes(bubble);
     bubble.dataset.placeholder = "Введите текст цитаты...";
     bindEditableField(node, bubble);
 
@@ -382,6 +428,7 @@ const hydrateExpertQuoteNode = (node: HTMLElement): void => {
         meta.append(description);
     }
 
+    normalizeTextNodes(description);
     description.dataset.placeholder = "Описание";
     bindEditableField(node, description);
 
@@ -394,6 +441,7 @@ const hydrateExpertQuoteNode = (node: HTMLElement): void => {
         meta.append(name);
     }
 
+    normalizeTextNodes(name);
     name.dataset.placeholder = "Имя автора";
     bindEditableField(node, name);
 
