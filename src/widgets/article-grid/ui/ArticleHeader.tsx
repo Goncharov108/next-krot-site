@@ -1,4 +1,5 @@
 import { Article } from "@/entities/article";
+import { formatArticleDisplayDate } from "@/entities/article/lib";
 import { Author } from "@/entities/author";
 import Image from "next/image";
 import DefaultAvatarImg from "@icons/default-avatar.svg";
@@ -31,11 +32,7 @@ export const ArticleHeader = ({ article, author, tags }: ArticleCardProps) => {
                 )}
                 <div className="flex flex-col gap-1">
                     <span className="text-gray-500">
-                        {article.updatedAt.toLocaleDateString("ru-RU", {
-                            day: "numeric",
-                            month: "long",
-                            year: "numeric",
-                        })}
+                        {formatArticleDisplayDate(article)}
                     </span>
                     <span className="font-semibold text-black dark:text-white">
                         {author.name}

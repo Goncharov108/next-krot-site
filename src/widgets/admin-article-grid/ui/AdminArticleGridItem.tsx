@@ -1,7 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 
-import { isArticleAvailableForPublication } from "@/entities/article/lib";
+import {
+    formatArticleDisplayDate,
+    isArticleAvailableForPublication,
+} from "@/entities/article/lib";
 import type { ArticleWithRelations } from "@/entities/article/model";
 import { cn } from "@/shared/lib/cn";
 import PencilIcon from "@icons/pencil.svg";
@@ -48,12 +51,7 @@ export const AdminArticleGridItem = ({
                 </h2>
 
                 <p className="mt-1 text-xs leading-tight text-slate-400 sm:text-sm">
-                    {article.author.name} -{" "}
-                    {article.updatedAt.toLocaleDateString("ru-RU", {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                    })}
+                    {article.author.name} - {formatArticleDisplayDate(article)}
                 </p>
 
                 <p className="mt-1 line-clamp-1 text-xs leading-tight text-slate-500 sm:text-sm dark:text-slate-400">

@@ -80,21 +80,48 @@ const normalizeNullableString = (value: string | null) => {
     return trimmedValue ? trimmedValue : null;
 };
 
-const getPublicationDateForSave = (
-    isPublished: boolean,
-    publishedAt: Date | null,
-) => {
-    if (!isPublished || !publishedAt) {
-        return publishedAt;
+/**
+ * Вычисляет итоговую дату публикации `publishedAt`:
+ * - при первой публикации (`isPublished: true` и `publishedAt` пустой) фиксирует текущее время `new Date()`,
+ * - при редактировании уже опубликованной статьи сохраняет прежнюю дату `existingPublishedAt` (если явно не задана новая),
+ * - для черновиков запрещает указывать отложенную дату в прошлом.
+ */
+const resolvePublicationDateForSave = ({
+    isPublished,
+    requestedPublishedAt,
+    existingPublishedAt = null,
+    wasAlreadyPublished = false,
+}: {
+    isPublished: boolean;
+    requestedPublishedAt: Date | null;
+    existingPublishedAt?: Date | null;
+    wasAlreadyPublished?: boolean;
+}): Date | null => {
+    if (!isPublished) {
+        return requestedPublishedAt ?? existingPublishedAt ?? null;
     }
 
-    if (publishedAt.getTime() < Date.now()) {
+    if (!requestedPublishedAt) {
+        return existingPublishedAt ?? new Date();
+    }
+
+    const isSameAsExistingDate =
+        existingPublishedAt !== null &&
+        Math.abs(
+            requestedPublishedAt.getTime() - existingPublishedAt.getTime(),
+        ) < 60_000;
+
+    if (
+        !wasAlreadyPublished &&
+        !isSameAsExistingDate &&
+        requestedPublishedAt.getTime() < Date.now() - 60_000
+    ) {
         throw new Error(
             "Отложенная публикация не может быть раньше текущего времени",
         );
     }
 
-    return publishedAt;
+    return requestedPublishedAt;
 };
 
 const calculateReadingTime = (mainText: string): number =>
@@ -142,6 +169,7 @@ const normalizeArticlePayload = (payload: UpdateArticlePayload) => {
 
     return {
         originalSlug: payload.originalSlug?.trim() || null,
+        requestedPublishedAt: publishedAt,
         data: {
             slug,
             title,
@@ -151,10 +179,6 @@ const normalizeArticlePayload = (payload: UpdateArticlePayload) => {
             mainText,
             readingTime: calculateReadingTime(mainText),
             isPublished: payload.isPublished,
-            publishedAt: getPublicationDateForSave(
-                payload.isPublished,
-                publishedAt,
-            ),
             authorId: payload.authorId,
             tags: {
                 set: uniqueTagIds.map((id) => ({ id })),
@@ -176,13 +200,22 @@ export const updateArticle = async (
             throw new Error("Ошибка авторизации");
         }
 
-        const { originalSlug, data, previewImageFile } =
-            normalizeArticlePayload(payload);
+        const {
+            originalSlug,
+            requestedPublishedAt,
+            data,
+            previewImageFile,
+        } = normalizeArticlePayload(payload);
 
         const existingArticle = originalSlug
             ? await prisma.article.findUnique({
                   where: { slug: originalSlug },
-                  select: { previewImg: true },
+                  select: {
+                      previewImg: true,
+                      isPublished: true,
+                      publishedAt: true,
+                      createdAt: true,
+                  },
               })
             : null;
 
@@ -194,8 +227,21 @@ export const updateArticle = async (
             uploadedPreviewImageUrl = await savePublicImage(previewImageFile);
         }
 
+        const existingPublishedAt = existingArticle
+            ? (existingArticle.publishedAt ??
+              (existingArticle.isPublished ? existingArticle.createdAt : null))
+            : null;
+
+        const finalPublishedAt = resolvePublicationDateForSave({
+            isPublished: data.isPublished,
+            requestedPublishedAt,
+            existingPublishedAt,
+            wasAlreadyPublished: existingArticle?.isPublished ?? false,
+        });
+
         const articleData = {
             ...data,
+            publishedAt: finalPublishedAt,
             previewImg: uploadedPreviewImageUrl ?? data.previewImg,
         };
 

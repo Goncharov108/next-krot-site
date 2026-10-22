@@ -4,11 +4,25 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Tag } from "@/entities/tag";
 
-export const TagMap = ({ onClick }: { onClick?: () => void }) => {
-    const [tags, setTags] = useState<Tag[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+interface TagMapProps {
+    initialTags?: Tag[];
+    onClick?: () => void;
+}
+
+/**
+ * Отображает список рубрик (тегов) с поддержкой SSR-предзагрузки (`initialTags`) и клиентского фолбэка.
+ */
+export const TagMap = ({ initialTags, onClick }: TagMapProps) => {
+    const [tags, setTags] = useState<Tag[]>(initialTags ?? []);
+    const [isLoading, setIsLoading] = useState(initialTags === undefined);
 
     useEffect(() => {
+        if (initialTags !== undefined) {
+            setTags(initialTags);
+            setIsLoading(false);
+            return;
+        }
+
         const fetchTags = async () => {
             try {
                 const response = await fetch("/api/tags");
@@ -28,7 +42,7 @@ export const TagMap = ({ onClick }: { onClick?: () => void }) => {
         };
 
         fetchTags();
-    }, []);
+    }, [initialTags]);
 
     if (isLoading) {
         return <div className="text-sm opacity-60">Загрузка тем...</div>;

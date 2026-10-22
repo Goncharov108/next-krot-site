@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 
+import { Tag } from "@/entities/tag";
 import { SITE_NAVIGATION_LINKS } from "@/shared/lib/site-links";
 import CloseIcon from "@icons/close-black.svg";
 import { SocialLinks } from "@/shared/ui/SocialLinks";
@@ -11,9 +12,10 @@ import { MailInfo } from "../../MailInfo/ui/MailInfo";
 
 interface BurgerMenuProps {
     onClose: () => void;
+    initialTags?: Tag[];
 }
 
-export const BurgerMenu = ({ onClose }: BurgerMenuProps) => {
+export const BurgerMenu = ({ onClose, initialTags }: BurgerMenuProps) => {
     return (
         <div className="w-full space-y-25 bg-white p-4 dark:bg-gray-900">
             <Logo className="absolute-x-center mt-3" onClick={onClose} />
@@ -47,7 +49,7 @@ export const BurgerMenu = ({ onClose }: BurgerMenuProps) => {
                 <p className="text-bold text-2xl text-black dark:text-white">
                     Наши темы
                 </p>
-                <TagMap onClick={onClose} />
+                <TagMap initialTags={initialTags} onClick={onClose} />
                 <MailInfo />
             </div>
             <SocialLinks variant="burger" />

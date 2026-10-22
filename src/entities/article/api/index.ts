@@ -2,16 +2,16 @@ import { prisma } from "@/shared/lib/prisma";
 import { ArticleWithRelations } from "../model";
 import { getPublishedArticleWhere } from "../lib";
 
-const clearPublishedScheduleDates = async () => {
-    await prisma.article.updateMany({
-        where: {
-            isPublished: true,
-            publishedAt: { lte: new Date() },
-        },
-        data: {
-            publishedAt: null,
-        },
-    });
+/**
+ * Проставляет `publishedAt = createdAt` у опубликованных статей, где `publishedAt` был `null`,
+ * чтобы зафиксировать дату первой публикации для старых статей в БД.
+ */
+const ensurePublishedArticleDates = async () => {
+    await prisma.$executeRaw`
+        UPDATE "Article"
+        SET "publishedAt" = "createdAt"
+        WHERE "isPublished" = true AND "publishedAt" IS NULL
+    `;
 };
 
 interface GetArticlesParams {
@@ -30,7 +30,7 @@ export const getArticles = async ({
     filters,
     isPublished,
 }: GetArticlesParams) => {
-    await clearPublishedScheduleDates();
+    await ensurePublishedArticleDates();
 
     return prisma.article.findMany({
         where: {
@@ -55,7 +55,7 @@ export const getArticles = async ({
         orderBy: [
             { isPublished: "asc" },
             { publishedAt: "desc" },
-            { updatedAt: "desc" },
+            { createdAt: "desc" },
         ],
     });
 };
@@ -64,7 +64,7 @@ export const getArticleBySlug = async (
     slug: string,
     onlyAvailable = false,
 ): Promise<ArticleWithRelations | null> => {
-    await clearPublishedScheduleDates();
+    await ensurePublishedArticleDates();
 
     return prisma.article.findFirst({
         where: {
@@ -79,12 +79,13 @@ export const getArticleBySlug = async (
 };
 
 export const getAllPublishedArticles = async () => {
-    await clearPublishedScheduleDates();
+    await ensurePublishedArticleDates();
 
     return prisma.article.findMany({
         where: getPublishedArticleWhere(),
         select: {
             slug: true,
+            publishedAt: true,
             updatedAt: true,
         },
         orderBy: {

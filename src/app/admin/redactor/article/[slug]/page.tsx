@@ -48,7 +48,8 @@ const AdminArticleRedactorPage = async ({
                     readingTime: article.readingTime?.toString() ?? "",
                     isPublished: article.isPublished,
                     publishedAtMoscow: formatDateToMoscowDateTimeInput(
-                        article.publishedAt,
+                        article.publishedAt ??
+                            (article.isPublished ? article.createdAt : null),
                     ),
                     authorId: article.author.id,
                     tagIds: article.tags.map((tag) => tag.id),

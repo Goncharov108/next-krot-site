@@ -1,16 +1,23 @@
 "use client";
 
 import { useModal } from "@/shared/lib/modal-node";
+import { Tag } from "@/entities/tag";
 
 import BurgerIcon from "@icons/burger-black.svg";
 
 import { BurgerMenu } from "./BurgerMenu";
 
-export const BurgerButton = () => {
+interface BurgerButtonProps {
+    initialTags?: Tag[];
+}
+
+export const BurgerButton = ({ initialTags }: BurgerButtonProps) => {
     const { openDialog, closeModal } = useModal();
 
     const handleOpen = () => {
-        openDialog(<BurgerMenu onClose={closeModal} />)();
+        openDialog(
+            <BurgerMenu onClose={closeModal} initialTags={initialTags} />,
+        )();
     };
 
     return (
