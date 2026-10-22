@@ -295,6 +295,39 @@ const bindAvatarButton = (
     });
 };
 
+const EDITOR_ONLY_QUOTE_ATTRS = [
+    "contenteditable",
+    "data-placeholder",
+    "data-empty",
+    "data-quill-inner-events-stopped",
+    "data-quote-blur-sync-bound",
+    "data-quote-input-bound",
+    "data-quote-avatar-bound",
+] as const;
+
+/**
+ * Удаляет служебные элементы и атрибуты редактора из DOM-узла экспертной цитаты перед сохранением.
+ */
+const stripEditorArtifactsFromQuote = (quote: HTMLElement): void => {
+    quote
+        .querySelectorAll(".ql-expert-quote__delete")
+        .forEach((button) => button.remove());
+
+    const nodesToClean = [
+        quote,
+        ...Array.from(quote.querySelectorAll<HTMLElement>("*")),
+    ];
+
+    nodesToClean.forEach((element) => {
+        EDITOR_ONLY_QUOTE_ATTRS.forEach((attr) => {
+            element.removeAttribute(attr);
+        });
+    });
+};
+
+/**
+ * Подготавливает HTML статьи к сохранению в БД: синхронизирует поля цитаты и очищает разметку редактора.
+ */
 const prepareExpertQuotesForSave = (html: string): string => {
     const parsedDocument = new DOMParser().parseFromString(html, "text/html");
 
@@ -311,17 +344,11 @@ const prepareExpertQuotesForSave = (html: string): string => {
                 ".ql-expert-quote__name",
             );
 
-            if (bubble) {
-                normalizeTextNodes(bubble);
-            }
-
-            if (description) {
-                normalizeTextNodes(description);
-            }
-
-            if (name) {
-                normalizeTextNodes(name);
-            }
+            [bubble, description, name].forEach((field) => {
+                if (field) {
+                    normalizeTextNodes(field);
+                }
+            });
 
             const textValue = normalizeExpertText(bubble?.textContent ?? "");
             const descriptionText = normalizeExpertText(
@@ -341,13 +368,13 @@ const prepareExpertQuotesForSave = (html: string): string => {
 
             if (description) {
                 description.textContent = finalDescription;
-                description.dataset.empty = "false";
             }
 
             if (name) {
                 name.textContent = finalName;
-                name.dataset.empty = "false";
             }
+
+            stripEditorArtifactsFromQuote(quote);
         });
 
     return parsedDocument.body.innerHTML;
@@ -587,6 +614,7 @@ const QUILL_FORMATS = [
     "italic",
     "underline",
     "strike",
+    "code",
     "blockquote",
     "link",
     "list",
@@ -700,7 +728,7 @@ const QuillEditor = ({
                     [{ header: [1, 2, 3, 4, 5, 6, false] }],
                     [{ size: ["small", false, "large", "huge"] }],
 
-                    ["bold", "italic", "underline", "strike"],
+                    ["bold", "italic", "underline", "strike", "code"],
                     [{ color: [] }, { background: [] }],
 
                     [{ script: "sub" }, { script: "super" }],

@@ -1,7 +1,7 @@
 import { domainCityProps } from "../model";
 
 const baseUrl =
-    process.env.NODE_ENV === "production" ? "alpforce.ru" : "localhost:3000";
+    process.env.NODE_ENV === "production" ? "krot.media" : "localhost:3000";
 const baseProtocol = process.env.NODE_ENV === "production" ? "https" : "http";
 
 export const domainCities: domainCityProps[] = [

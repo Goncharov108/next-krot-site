@@ -2,7 +2,7 @@ import Image from "next/image";
 
 import { Article } from "@/entities/article";
 import { cn } from "@/shared/lib/cn";
-import { ParsedHTML } from "@/shared/lib/html-react-parser";
+import { ParsedHTML, sanitizeArticleHtml } from "@/shared/lib/html-react-parser";
 
 import defaultImg from "@images/mockImg.png";
 
@@ -11,8 +11,12 @@ interface ArticleBodyProps {
     isExpanded: boolean;
 }
 
+/**
+ * Отображает обложку, заголовок и очищенное тело статьи.
+ */
 export const ArticleBody = ({ article, isExpanded }: ArticleBodyProps) => {
     const TitleTag = isExpanded ? "h1" : "h2";
+    const cleanMainText = sanitizeArticleHtml(article.mainText);
 
     return (
         <>
@@ -40,7 +44,7 @@ export const ArticleBody = ({ article, isExpanded }: ArticleBodyProps) => {
                             isExpanded ? "max-h-full" : "max-h-30 md:max-h-50",
                         )}
                     >
-                        <ParsedHTML html={article.mainText} />
+                        <ParsedHTML html={cleanMainText} />
                     </div>
 
                     {!isExpanded && (

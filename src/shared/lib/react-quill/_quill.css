@@ -43,6 +43,20 @@
   }
 }
 
+.ql-editor code,
+.ql-rendered-content code {
+  padding: 2px 6px;
+  border-radius: 6px;
+  background-color: rgba(32, 36, 43, 0.08);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.9em;
+}
+
+.dark .ql-editor code,
+.dark .ql-rendered-content code {
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
 .ql-toolbar .ql-expertQuote {
   width: auto !important;
   min-width: 64px;

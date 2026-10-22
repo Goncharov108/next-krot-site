@@ -4,6 +4,6 @@ Disallow: /_not-found
 Disallow: /api
 Disallow: /privacy
 
-Host: alpforce.ru
-Sitemap: https://alpforce.ru/sitemap.xml
+Host: krot.media
+Sitemap: https://krot.media/sitemap.xml
 Clean-Param: _ym_debug /

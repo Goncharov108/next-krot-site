@@ -6,30 +6,54 @@ interface ParsedHTMLProps {
     html: string;
 }
 
+const EDITOR_ATTR_PATTERNS = [
+    /\scontenteditable(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?/gi,
+    /\sdata-quill-inner-events-stopped(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?/gi,
+    /\sdata-quote-blur-sync-bound(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?/gi,
+    /\sdata-quote-input-bound(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?/gi,
+    /\sdata-quote-avatar-bound(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?/gi,
+    /\sdata-placeholder(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?/gi,
+    /\sdata-empty(?:\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+))?/gi,
+] as const;
+
+/**
+ * Удаляет кнопку удаления экспертной цитаты (`.ql-expert-quote__delete`) из HTML-строки.
+ */
 const removeDeleteButtons = (html: string): string => {
     return html.replace(
-        /<button\b[^>]*class="[^"]*\bql-expert-quote__delete\b[^"]*"[^>]*>[\s\S]*?<\/button>/g,
+        /<button\b[^>]*\bclass=(?:"[^"]*\bql-expert-quote__delete\b[^"]*"|'[^']*\bql-expert-quote__delete\b[^']*')[^>]*>[\s\S]*?<\/button>/gi,
         "",
     );
 };
 
+/**
+ * Удаляет служебные атрибуты редактора Quill (`contenteditable`, `data-*`) из HTML-строки.
+ */
 const removeEditableAttributes = (html: string): string => {
-    return html
-        .replace(/\scontenteditable="(?:true|false)"/g, "")
-        .replace(/\sdata-quill-inner-events-stopped="true"/g, "")
-        .replace(/\sdata-quote-blur-sync-bound="true"/g, "")
-        .replace(/\sdata-quote-input-bound="true"/g, "")
-        .replace(/\sdata-quote-avatar-bound="true"/g, "");
+    return EDITOR_ATTR_PATTERNS.reduce(
+        (acc, pattern) => acc.replace(pattern, ""),
+        html,
+    );
 };
 
-const getReadonlyHtml = (html: string): string => {
+/**
+ * Очищает HTML статьи от админской разметки редактора перед публичным рендером.
+ */
+export const sanitizeArticleHtml = (html: string): string => {
+    if (!html) {
+        return "";
+    }
+
     return removeEditableAttributes(removeDeleteButtons(html));
 };
 
+/**
+ * Безопасно рендерит очищенный HTML-контент статьи на публичной странице.
+ */
 export const ParsedHTML = ({ html }: ParsedHTMLProps) => {
     return (
         <div className="ql-rendered-content">
-            {parse(getReadonlyHtml(html))}
+            {parse(sanitizeArticleHtml(html))}
         </div>
     );
 };
