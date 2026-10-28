@@ -15,6 +15,7 @@ import { AdminGate, auth } from "@/core/auth";
 import { SessionProvider } from "next-auth/react";
 import AdminRedactor from "@/widgets/admin-redactor/AdminMenu";
 import { MailInfo } from "@/shared/ui/MailInfo/ui/MailInfo";
+import { PromoSidebar } from "@/shared/ui/PromoSidebar";
 import { getTags } from "@/entities/tag/api";
 
 export const generateMetadata = async (): Promise<Metadata> => {
@@ -24,6 +25,11 @@ export const generateMetadata = async (): Promise<Metadata> => {
             template: `%s `,
         },
         description: `Все о информационных технологиях в России | ИИ в настоящем и будущем`,
+        alternates: {
+            types: {
+                "application/rss+xml": "https://krot.media/rss.xml",
+            },
+        },
     };
 };
 
@@ -79,7 +85,9 @@ const RootLayout = async ({
                                 {children}
                             </main>
 
-                            <aside className="hidden w-58 shrink-0 lg:block" />
+                            <aside className="hidden w-58 shrink-0 lg:block">
+                                <PromoSidebar />
+                            </aside>
                         </div>
                         <ModalRenderer />
                         <AdminGate>

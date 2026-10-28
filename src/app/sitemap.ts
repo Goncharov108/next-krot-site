@@ -4,10 +4,27 @@ import { getAuthors } from "@/entities/author/api";
 import { getTags } from "@/entities/tag/api";
 import { MetadataRoute } from "next";
 
+/**
+ * Генерирует XML-карту сайта (sitemap.xml) с датами обновления и приоритетами страниц.
+ */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const baseUrl = await getBaseUrl();
+    const now = new Date();
 
-    const staticPages = [{ url: baseUrl }, { url: `${baseUrl}/about` }];
+    const staticPages: MetadataRoute.Sitemap = [
+        {
+            url: baseUrl,
+            lastModified: now,
+            changeFrequency: "hourly",
+            priority: 1.0,
+        },
+        {
+            url: `${baseUrl}/about`,
+            lastModified: now,
+            changeFrequency: "monthly",
+            priority: 0.5,
+        },
+    ];
 
     if (process.env.BUILD_TIME) {
         return [...staticPages];
@@ -19,16 +36,25 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         getAuthors(),
     ]);
 
-    const articlePages = articles.map((article) => ({
+    const articlePages: MetadataRoute.Sitemap = articles.map((article) => ({
         url: `${baseUrl}/article/${article.slug}`,
+        lastModified: article.updatedAt ?? article.publishedAt ?? now,
+        changeFrequency: "weekly",
+        priority: 0.9,
     }));
 
-    const tagPages = tags.map((tag) => ({
+    const tagPages: MetadataRoute.Sitemap = tags.map((tag) => ({
         url: `${baseUrl}/tag/${tag.slug}`,
+        lastModified: now,
+        changeFrequency: "daily",
+        priority: 0.7,
     }));
 
-    const authorPages = authors.map((author) => ({
+    const authorPages: MetadataRoute.Sitemap = authors.map((author) => ({
         url: `${baseUrl}/author/${author.slug}`,
+        lastModified: now,
+        changeFrequency: "weekly",
+        priority: 0.6,
     }));
 
     return [...staticPages, ...articlePages, ...tagPages, ...authorPages];

@@ -84,12 +84,81 @@ export const getAllPublishedArticles = async () => {
     return prisma.article.findMany({
         where: getPublishedArticleWhere(),
         select: {
+            id: true,
             slug: true,
+            title: true,
+            metaDescription: true,
+            previewImg: true,
             publishedAt: true,
             updatedAt: true,
+            author: {
+                select: {
+                    name: true,
+                    slug: true,
+                },
+            },
+            tags: {
+                select: {
+                    id: true,
+                    name: true,
+                    slug: true,
+                },
+            },
         },
         orderBy: {
             publishedAt: "desc",
         },
     });
+};
+
+/**
+ * Возвращает список тематически близких опубликованных статей для блока внутренней перелинковки.
+ */
+export const getRelatedArticles = async (
+    currentArticleId: number,
+    tagIds: number[],
+    limit = 3,
+): Promise<ArticleWithRelations[]> => {
+    await ensurePublishedArticleDates();
+
+    const byTags =
+        tagIds.length > 0
+            ? await prisma.article.findMany({
+                  where: {
+                      ...getPublishedArticleWhere(),
+                      id: { not: currentArticleId },
+                      tags: {
+                          some: {
+                              id: { in: tagIds },
+                          },
+                      },
+                  },
+                  include: {
+                      author: true,
+                      tags: true,
+                  },
+                  orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+                  take: limit,
+              })
+            : [];
+
+    if (byTags.length >= limit) {
+        return byTags;
+    }
+
+    const excludeIds = [currentArticleId, ...byTags.map((a) => a.id)];
+    const fallback = await prisma.article.findMany({
+        where: {
+            ...getPublishedArticleWhere(),
+            id: { notIn: excludeIds },
+        },
+        include: {
+            author: true,
+            tags: true,
+        },
+        orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+        take: limit - byTags.length,
+    });
+
+    return [...byTags, ...fallback];
 };
