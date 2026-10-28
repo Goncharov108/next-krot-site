@@ -104,6 +104,89 @@ model Article {
 
   tags Tag[] @relation("ArticleTags")
 
+  dailyMetrics    ArticleMetricDaily[]
+  linkClicks      ArticleLinkClick[]
+  contentPlanItem ContentPlanItem?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum ContentPlanStage {
+  IDEA
+  DRAFTING
+  REVIEW
+  SCHEDULED
+  PUBLISHED
+}
+
+enum ContentPlanPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+model ArticleMetricDaily {
+  id                 Int      @id @default(autoincrement())
+  articleId          Int
+  date               DateTime @db.Date
+  impressions        Int      @default(0)
+  opens              Int      @default(0)
+  scroll25           Int      @default(0)
+  scroll50           Int      @default(0)
+  scroll75           Int      @default(0)
+  scroll100          Int      @default(0)
+  totalActiveTimeSec Int      @default(0)
+  engagedSessions    Int      @default(0)
+  sharesCount        Int      @default(0)
+  bouncesCount       Int      @default(0)
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([articleId, date])
+}
+
+model ArticleLinkClick {
+  id          Int      @id @default(autoincrement())
+  articleId   Int
+  targetUrl   String
+  anchorText  String
+  isExternal  Boolean  @default(true)
+  clicksCount Int      @default(1)
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([articleId, targetUrl])
+}
+
+model ContentPlanItem {
+  id              Int                 @id @default(autoincrement())
+  title           String
+  slug            String?
+  stage           ContentPlanStage    @default(IDEA)
+  priority        ContentPlanPriority @default(MEDIUM)
+  plannedDate     DateTime?
+  targetWordCount Int                 @default(1500)
+  currentWords    Int                 @default(0)
+  notes           String              @default("")
+  targetOpenRate  Float?
+  targetReadRate  Float?
+
+  articleId Int?     @unique
+  article   Article? @relation(fields: [articleId], references: [id], onDelete: SetNull)
+
+  authorId Int?
+  author   Author? @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  tagIds Int[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -123,5 +206,6 @@ model Author {
   description String
   avatarImg   String?
 
-  articles Article[]
+  articles         Article[]
+  contentPlanItems ContentPlanItem[]
 }

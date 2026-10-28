@@ -1,6 +1,7 @@
 import { Article } from "@/entities/article";
 import { Author } from "@/entities/author";
 import { Tag } from "@/entities/tag";
+import { ArticleTelemetryBoundary } from "@/features/article-telemetry/ArticleTelemetryBoundary";
 
 import { ArticleHeader } from "./ArticleHeader";
 import { ArticlePreview } from "./ArticlePreview";
@@ -21,13 +22,17 @@ export const ArticleCard = ({
     isFullArticle = false,
 }: ArticleCardProps) => {
     return (
-        <article className="space-y-6 overflow-hidden rounded-3xl bg-white p-6 dark:bg-gray-900">
+        <ArticleTelemetryBoundary
+            articleId={article.id}
+            isFullArticle={isFullArticle}
+            className="space-y-6 overflow-hidden rounded-3xl bg-white p-6 dark:bg-gray-900"
+        >
             <ArticleHeader article={article} author={author} tags={tags} />
             <ArticlePreview
                 article={article}
                 editHref={editHref}
                 isFullArticle={isFullArticle}
             />
-        </article>
+        </ArticleTelemetryBoundary>
     );
 };
